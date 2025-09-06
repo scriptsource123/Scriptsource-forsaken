@@ -1,5 +1,5 @@
 --[[ 
-    ScriptSource HUB – Chance / Guest / Main Tabs
+    scriptsource HUB – Chance / Guest / Main Tabs
     Main: Infinite Stamina, Killer ESP, Infinite Yield
     Guest: Auto Block, Auto Punch, Fling, etc.
 ]]--
@@ -12,9 +12,9 @@ local PlayerGui = lp:WaitForChild("PlayerGui")
 
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Window = Rayfield:CreateWindow({
-    Name = "Scriptsource HUB",
+    Name = "scriptsource HUB",
     LoadingTitle = "Loading scriptsource HUB",
-    ConfigurationSaving = {Enabled = true, FolderName = "scriptsrouceHUB", FileName = "Settings"},
+    ConfigurationSaving = {Enabled = true, FolderName = "scriptsourceHUB", FileName = "Settings"},
     Discord = {Enabled = false},
     KeySystem = false
 })
