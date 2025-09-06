@@ -1,35 +1,30 @@
---[[ 
-    scriptsource HUB – Chance / Guest / Main Tabs
-    Main: Infinite Stamina, Killer ESP, Infinite Yield
-    Guest: Auto Block, Auto Punch, Fling, etc.
-]]--
-
+-- Auto Block & Main Hub Script (Full Features)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local PlayerGui = lp:WaitForChild("PlayerGui")
+local Humanoid, Animator
 
+-- Rayfield
 local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
 local Window = Rayfield:CreateWindow({
-    Name = "scriptsource HUB",
-    LoadingTitle = "Loading scriptsource HUB",
-    ConfigurationSaving = {Enabled = true, FolderName = "scriptsourceHUB", FileName = "Settings"},
+    Name = "SourceHub Hub",
+    LoadingTitle = "Loading SourceHub|Forsaken",
+    LoadingSubtitle = "by scriptsource",
+    ConfigurationSaving = {Enabled = true, FolderName = "scriptsourceHub", FileName = "Settings"},
     Discord = {Enabled = false},
     KeySystem = false
 })
 
--- Create Tabs
+-- Tabs
 local MainTab = Window:CreateTab("Main", 4483362458)
 local GuestTab = Window:CreateTab("Guest", 4483362458)
 
--- ================= MAIN TAB =================
--- Infinite Stamina Variables
+-- ======= Main Tab =======
+-- Infinite Stamina
 local infiniteStamina = false
-local customStamina = 100
-
--- Function to set stamina
-local function setCustomStamina(amount)
+local function enableInfiniteStamina()
     local success, StaminaModule = pcall(function()
         return require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
     end)
@@ -39,81 +34,58 @@ local function setCustomStamina(amount)
     task.spawn(function()
         while infiniteStamina and StaminaModule do
             task.wait(0.1)
-            StaminaModule.Stamina = amount
+            StaminaModule.Stamina = StaminaModule.MaxStamina
             StaminaModule.StaminaChanged:Fire()
         end
     end)
 end
 
--- Function to disable stamina override
-local function disableCustomStamina()
-    local success, StaminaModule = pcall(function()
-        return require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
-    end)
-    if success and StaminaModule then
-        StaminaModule.StaminaLossDisabled = false
-    end
-end
-
--- Infinite Stamina Toggle
 MainTab:CreateToggle({
     Name = "Infinite Stamina",
     CurrentValue = false,
-    Callback = function(value)
-        infiniteStamina = value
-        if value then
-            setCustomStamina(customStamina)
+    Callback = function(Value)
+        infiniteStamina = Value
+        if infiniteStamina then
+            enableInfiniteStamina()
         else
-            disableCustomStamina()
-        end
-    end
-})
-
--- Stamina Input Box
-MainTab:CreateInput({
-    Name = "Set Stamina",
-    PlaceholderText = "100",
-    RemoveTextAfterFocusLost = false,
-    Callback = function(text)
-        local val = tonumber(text)
-        if val then
-            customStamina = val
-            if infiniteStamina then
-                setCustomStamina(customStamina)
+            local success, StaminaModule = pcall(function()
+                return require(game.ReplicatedStorage.Systems.Character.Game.Sprinting)
+            end)
+            if success and StaminaModule then
+                StaminaModule.StaminaLossDisabled = false
             end
         end
     end
 })
 
 -- Killer ESP
-local espEnabled = false
 local KillersFolder = workspace:WaitForChild("Players"):WaitForChild("Killers")
+local espEnabled = false
 
 local function addESP(obj)
-    if not obj:IsA("Model") then return end
-    if not obj:FindFirstChild("HumanoidRootPart") then return end
+    if not obj:IsA("Model") or not obj:FindFirstChild("HumanoidRootPart") then return end
     if obj:FindFirstChild("ESP_Highlight") then return end
 
     local highlight = Instance.new("Highlight")
     highlight.Name = "ESP_Highlight"
-    highlight.FillColor = Color3.fromRGB(255, 0, 0)
-    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.FillColor = Color3.fromRGB(255,0,0)
+    highlight.OutlineColor = Color3.fromRGB(255,255,255)
     highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
     highlight.Adornee = obj
     highlight.Parent = obj
 
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "ESP_Billboard"
-    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.Size = UDim2.new(0,100,0,50)
     billboard.AlwaysOnTop = true
-    billboard.Adornee = obj:FindFirstChild("HumanoidRootPart")
+    billboard.Adornee = obj.HumanoidRootPart
     billboard.Parent = obj
 
     local textLabel = Instance.new("TextLabel")
     textLabel.Name = "ESP_Text"
-    textLabel.Size = UDim2.new(1, 0, 1, 0)
+    textLabel.Size = UDim2.new(1,0,1,0)
     textLabel.BackgroundTransparency = 1
-    textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+    textLabel.TextColor3 = Color3.fromRGB(255,0,0)
     textLabel.TextScaled = true
     textLabel.Font = Enum.Font.SourceSansBold
     textLabel.Text = obj.Name
@@ -127,18 +99,14 @@ end
 
 local function refreshESP()
     if not espEnabled then
-        for _, killer in pairs(KillersFolder:GetChildren()) do
-            clearESP(killer)
-        end
+        for _, killer in pairs(KillersFolder:GetChildren()) do clearESP(killer) end
         return
     end
-    for _, killer in pairs(KillersFolder:GetChildren()) do
-        addESP(killer)
-    end
+    for _, killer in pairs(KillersFolder:GetChildren()) do addESP(killer) end
 end
 
 KillersFolder.ChildAdded:Connect(function(child)
-    if espEnabled then task.wait(0.1); addESP(child) end
+    if espEnabled then task.wait(0.1) addESP(child) end
 end)
 KillersFolder.ChildRemoved:Connect(function(child) clearESP(child) end)
 
@@ -156,30 +124,63 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ESP Toggle
 MainTab:CreateToggle({
     Name = "Killer ESP",
     CurrentValue = false,
-    Callback = function(value)
-        espEnabled = value
+    Callback = function(Value)
+        espEnabled = Value
         refreshESP()
     end
 })
 
--- Infinite Yield Button
+-- Infinite Yield
 MainTab:CreateButton({
     Name = "Run Infinite Yield",
     Callback = function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
     end
 })
+MainTab:CreateParagraph({Title = "Tip", Content = 'Run Infinite Yield and type "antifling" so punch fling works better.'})
 
--- ================= GUEST TAB =================
--- All your old block, punch, fling, and fake block code goes here
--- Just copy the buttons and toggles from your previous Guest tab script
--- Example:
-GuestTab:CreateToggle({Name="Auto Block", CurrentValue=false, Callback=function(val) autoBlockOn=val end})
-GuestTab:CreateToggle({Name="Auto Punch", CurrentValue=false, Callback=function(val) autoPunchOn=val end})
-GuestTab:CreateToggle({Name="Fling Punch", CurrentValue=false, Callback=function(val) flingPunchOn=val end})
--- Add all other Guest functionality here...
+-- ======= Guest Tab =======
+-- Auto Block
+local autoBlockOn, autoBlockAudioOn, doubleblocktech, blockTPEnabled = false,false,false,false
+local facingCheckEnabled, looseFacing = true,true
+local detectionRange, detectionRangeSq = 18, 324
 
+-- Auto Block Toggles
+GuestTab:CreateToggle({Name = "Auto Block (Animation)", CurrentValue=false, Callback=function(Value) autoBlockOn=Value end})
+GuestTab:CreateToggle({Name = "Auto Block (Audio)", CurrentValue=false, Callback=function(Value) autoBlockAudioOn=Value end})
+GuestTab:CreateToggle({Name = "Double Punch Tech", CurrentValue=false, Callback=function(Value) doubleblocktech=Value end})
+GuestTab:CreateToggle({Name = "Enable Facing Check", CurrentValue=true, Callback=function(Value) facingCheckEnabled=Value end})
+GuestTab:CreateDropdown({Name="Facing Check", Options={"Loose","Strict"}, CurrentOption="Loose", Callback=function(Option) looseFacing = Option=="Loose" end})
+GuestTab:CreateInput({Name="Detection Range", PlaceholderText="18", RemoveTextAfterFocusLost=false, Callback=function(Text) detectionRange=tonumber(Text) or detectionRange detectionRangeSq=detectionRange*detectionRange end})
+GuestTab:CreateToggle({Name="Block TP", CurrentValue=false, Callback=function(Value) blockTPEnabled=Value end})
+
+-- Fake Block Button
+GuestTab:CreateButton({Name="Load Fake Block", Callback=function()
+    pcall(function()
+        local fakeGui = PlayerGui:FindFirstChild("FakeBlockGui")
+        if not fakeGui then
+            local success, result = pcall(function()
+                return loadstring(game:HttpGet("https://raw.githubusercontent.com/skibidi399/Auto-block-script/main/fakeblock"))()
+            end)
+            if not success then warn("❌ Failed to load Fake Block GUI:", result) end
+        else
+            fakeGui.Enabled = true
+            print("✅ Fake Block GUI enabled")
+        end
+    end)
+end})
+
+-- Auto Punch
+local autoPunchOn, flingPunchOn, aimPunch = false,false,false
+local predictionValue, flingPower = 4, 10000
+
+GuestTab:CreateToggle({Name="Auto Punch", CurrentValue=false, Callback=function(Value) autoPunchOn=Value end})
+GuestTab:CreateToggle({Name="Fling Punch", CurrentValue=false, Callback=function(Value) flingPunchOn=Value end})
+GuestTab:CreateToggle({Name="Punch Aimbot", CurrentValue=false, Callback=function(Value) aimPunch=Value end})
+GuestTab:CreateSlider({Name="Aim Prediction", Range={0,10}, Increment=0.1, CurrentValue=predictionValue, Suffix="studs", Callback=function(Value) predictionValue=Value end})
+GuestTab:CreateSlider({Name="Fling Power", Range={5000,50000000000000}, Increment=1000000, CurrentValue=flingPower, Callback=function(Value) flingPower=Value end})
+
+-- End of Script
